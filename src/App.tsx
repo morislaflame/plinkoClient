@@ -23,18 +23,15 @@ const App = observer(() => {
   useEffect(() => {
     const authenticate = async () => {
       const initData = tg?.initData;
-      console.log("Init Data:", initData); // Для отладки
 
       if (initData) {
         try {
-          // Выполняем аутентификацию через Telegram
           await user.telegramLogin(initData.toString());
         } catch (error) {
           console.error("Telegram authentication error:", error);
         }
       } else {
         try {
-          // Выполняем проверку состояния аутентификации
           await user.checkAuth();
         } catch (error) {
           console.error("Check authentication error:", error);

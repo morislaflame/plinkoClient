@@ -58,19 +58,35 @@ export class Ball {
         }
       });
   
-      // Collision with sinks
+      // Collision with sinks - выбираем ближайшую ячейку среди касающихся
+      let touchingSinks: {index: number, distance: number}[] = [];
+      
       for (let i = 0; i < this.sinks.length; i++) {
         const sink = this.sinks[i];
+        const ballX = unpad(this.x);
+        const ballY = unpad(this.y);
+        
+        // Проверяем касание ячейки
         if (
-            unpad(this.x) > sink.x - sink.width / 2 &&
-            unpad(this.x) < sink.x + sink.width / 2 &&
-            (unpad(this.y) + this.radius) > (sink.y - sink.height / 2)
+            ballX > (sink.x - sink.width / 2) &&
+            ballX < (sink.x + sink.width / 2) &&
+            ballY + this.radius >= (sink.y - sink.height / 2)
         ) {
-            this.vx = 0;
-            this.vy = 0;
-            this.onFinish(i);
-            break;
+            // Вычисляем расстояние от центра шарика до центра ячейки
+            const centerDistance = Math.abs(ballX - sink.x);
+            touchingSinks.push({index: i, distance: centerDistance});
         }
+      }
+      
+      // Если есть касающиеся ячейки, выбираем ближайшую
+      if (touchingSinks.length > 0) {
+          // Сортируем по расстоянию и берем ближайшую
+          touchingSinks.sort((a, b) => a.distance - b.distance);
+          const closestSink = touchingSinks[0];
+          
+          this.vx = 0;
+          this.vy = 0;
+          this.onFinish(closestSink.index);
       }
     }
   

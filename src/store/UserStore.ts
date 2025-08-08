@@ -56,6 +56,7 @@ export default class UserStore {
                 this.setUser(data as UserInfo);
                 this.setIsAuth(true);
                 this.setServerError(false);
+                this.fetchMyInfo();
             });
         } catch (error) {
             console.error("Error during Telegram authentication:", error);
@@ -70,6 +71,7 @@ export default class UserStore {
                 this.setUser(data as UserInfo);
                 this.setIsAuth(true);
                 this.setServerError(false);
+                this.fetchMyInfo();
             });
         } catch (error) {
             console.error("Error during auth check:", error);

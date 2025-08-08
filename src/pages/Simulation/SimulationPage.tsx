@@ -23,7 +23,7 @@ export function SimulationPage() {
     14: [],
     15: [],
     16: [],
-    17: [],
+    // 17: [],
   });
 
   async function simulate(ballManager: BallManager) {

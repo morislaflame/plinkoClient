@@ -27,7 +27,7 @@ export const Simulate = () => {
     14: [],
     15: [],
     16: [],
-    17: [],
+    // 17: [],
   });
 
   async function simulate(ballManager: BallManager) {

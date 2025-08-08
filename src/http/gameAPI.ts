@@ -14,6 +14,8 @@ export interface BetResult {
   multiplier: number;
   winAmount: number;
   newBalance: number;
+  sinkIndex: number;
+  ballStartPosition: number;
 }
 
 export interface GameResponse {

@@ -14,5 +14,8 @@ export const NUM_SINKS = 17;
 
 
 export const MAIN_ROUTE = '/';
+export const LOGIN_ROUTE = '/login';
+export const REGISTER_ROUTE = '/register';
+export const LOBBY_ROUTE = '/lobby';
 export const GAME_ROUTE = '/game';
 export const SIMULATION_ROUTE = '/simulation';
