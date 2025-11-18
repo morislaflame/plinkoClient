@@ -1,4 +1,4 @@
-import { HEIGHT, WIDTH, ballRadius, obstacleRadius, sinkWidth } from "../utils/consts";
+import { HEIGHT, WIDTH, ballRadius, obstacleRadius} from "../utils/consts";
 import { type Obstacle, type Sink, createObstacles, createSinks } from "../utils/objects";
 import { pad, unpad } from "../utils/padding";
 import { Ball } from "./Ball";
