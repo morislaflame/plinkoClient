@@ -26,6 +26,14 @@ export const login = async (email: string, password: string) => {
     };
 };
 
+export const quickLogin = async (username: string) => {
+    const { data } = await $host.post('api/user/quick-login', { username });
+    localStorage.setItem('token', data.token);
+    return {
+        ...jwtDecode(data.token),
+    };
+};
+
 export const check = async () => {
     const {data} = await $authHost.get('api/user/auth')
     localStorage.setItem('token', data.token)// Логирование

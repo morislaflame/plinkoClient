@@ -1,5 +1,5 @@
 import {makeAutoObservable, runInAction } from "mobx";
-import { fetchMyInfo, telegramAuth, check } from "../http/userAPI";
+import { fetchMyInfo, telegramAuth, check, quickLogin } from "../http/userAPI";
 import type { UserInfo } from "../types/types";
 
 export default class UserStore {
@@ -63,6 +63,27 @@ export default class UserStore {
             this.setServerError(true, 'Server is not responding. Please try again later.');
         }
     }
+
+    async quickLogin(username: string) {
+        try {
+            this.setLoading(true);
+            const data = await quickLogin(username);
+            runInAction(() => {
+                this.setUser(data as UserInfo);
+                this.setIsAuth(true);
+                this.setServerError(false);
+                this.setLoading(false);
+                this.fetchMyInfo();
+            });
+        } catch (error: any) {
+            console.error("Error during quick login:", error);
+            runInAction(() => {
+                this.setLoading(false);
+                const errorMessage = error?.response?.data?.message || 'Failed to login. Please try again.';
+                this.setServerError(true, errorMessage);
+            });
+        }
+    }
     
     async checkAuth() {
         try {
@@ -73,13 +94,23 @@ export default class UserStore {
                 this.setServerError(false);
                 this.fetchMyInfo();
             });
-        } catch (error) {
-            console.error("Error during auth check:", error);
-            runInAction(() => {
-                this.setIsAuth(false);
-                this.setUser(null);
-                this.setServerError(true, 'Server is not responding. Please try again later.');
-            });
+        } catch (error: any) {
+            // Если ошибка 401 (Unauthorized) - это нормально, пользователь просто не авторизован
+            if (error?.response?.status === 401) {
+                runInAction(() => {
+                    this.setIsAuth(false);
+                    this.setUser(null);
+                    this.setServerError(false);
+                });
+            } else {
+                // Другие ошибки - это реальные проблемы с сервером
+                console.error("Error during auth check:", error);
+                runInAction(() => {
+                    this.setIsAuth(false);
+                    this.setUser(null);
+                    this.setServerError(true, 'Server is not responding. Please try again later.');
+                });
+            }
         }
     }
 
@@ -93,12 +124,20 @@ export default class UserStore {
                 this.setServerError(false);
             });
             
-        } catch (error) {
-            console.error("Error during fetching my info:", error);
-            runInAction(() => {
-                this.setLoading(false);
-                this.setServerError(true, 'Failed to fetch user info');
-            });
+        } catch (error: any) {
+            // Если ошибка 401 (Unauthorized) - это нормально, пользователь просто не авторизован
+            if (error?.response?.status === 401) {
+                runInAction(() => {
+                    this.setLoading(false);
+                    this.setServerError(false);
+                });
+            } else {
+                console.error("Error during fetching my info:", error);
+                runInAction(() => {
+                    this.setLoading(false);
+                    this.setServerError(true, 'Failed to fetch user info');
+                });
+            }
         }
     }
 

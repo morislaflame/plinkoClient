@@ -1,8 +1,8 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { Context, type IStoreContext } from "../../store/StoreProvider";
-import { GAME_ROUTE, LOGIN_ROUTE, WIDTH } from "../../utils/consts";
+import { GAME_ROUTE, WIDTH } from "../../utils/consts";
 import { BallManager } from "../../classes/BallManager";
 import { pad } from "../../utils/padding";
 
@@ -10,15 +10,11 @@ const LobbyPage = observer(() => {
   const { game, user } = useContext(Context) as IStoreContext;
   const navigate = useNavigate();
   const [isCreating, setIsCreating] = useState(false);
+  const [username, setUsername] = useState("");
+  const [isQuickLogging, setIsQuickLogging] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleStartNewGame = async () => {
-    // Проверяем авторизацию пользователя
-    if (!user.isAuth) {
-      navigate(LOGIN_ROUTE);
-      return;
-    }
-
     try {
       setIsCreating(true);
       await game.createGame();
@@ -30,14 +26,31 @@ const LobbyPage = observer(() => {
     }
   };
 
-  const handleGoToLogin = () => {
-    navigate(LOGIN_ROUTE);
-  };
+  // const handleGoToLogin = () => {
+  //   navigate(LOGIN_ROUTE);
+  // };
+
+  const handleQuickLogin = useCallback(async () => {
+    if (!username.trim()) {
+      return;
+    }
+
+    try {
+      setIsQuickLogging(true);
+      await user.quickLogin(username.trim());
+    } catch (error) {
+      console.error("Error during quick login:", error);
+    } finally {
+      setIsQuickLogging(false);
+    }
+  }, [username, user]);
+
+  const handleUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(e.target.value);
+  }, []);
 
   async function simulate(ballManager: BallManager) {
-    let i = 0;
-    while (1) {
-      i++;
+    while (true) {
       ballManager.addBall(pad(WIDTH / 2 + 20 * (Math.random() - 0.5)));
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
@@ -84,33 +97,68 @@ const LobbyPage = observer(() => {
 
           {/* Статус авторизации */}
           {!user.isAuth && (
-            <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <p className="text-yellow-800 text-sm text-center">
-                You need to be logged in to play the game
-              </p>
+            <>
+              <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-yellow-800 text-sm text-center">
+                  You need to be logged in to play the game
+                </p>
+              </div>
+
+              {/* Быстрый вход по никнейму */}
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                    Enter your nickname to play:
+                  </label>
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={handleUsernameChange}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" && username.trim()) {
+                        handleQuickLogin();
+                      }
+                    }}
+                    placeholder="Your nickname"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
+                    disabled={isQuickLogging}
+                    autoComplete="off"
+                  />
+                </div>
+                <button
+                  onClick={handleQuickLogin}
+                  disabled={!username.trim() || isQuickLogging}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-6 rounded-lg font-semibold text-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isQuickLogging ? "Logging in..." : "Submit"}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Кнопка начала игры (только для авторизованных пользователей) */}
+          {user.isAuth && (
+            <div className="text-center">
+              <button
+                onClick={handleStartNewGame}
+                disabled={isCreating}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isCreating ? "Creating Game..." : "Start New Game"}
+              </button>
             </div>
           )}
 
-          {/* Кнопка начала игры */}
-          <div className="text-center">
-            <button
-              onClick={handleStartNewGame}
-              disabled={isCreating}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isCreating ? "Creating Game..." : "Start New Game"}
-            </button>
-          </div>
-
           {/* Кнопка перехода на логин */}
-          <div className="text-center">
+          {/* <div className="text-center">
             <button
               onClick={handleGoToLogin}
               className="w-full bg-gray-500 text-white py-3 px-6 rounded-lg font-semibold text-lg hover:bg-gray-600 transition-all duration-200"
             >
               {user.isAuth ? "Switch Account" : "Login to Play"}
             </button>
-          </div>
+          </div> */}
 
 
           {/* Информация о пользователе (если авторизован) */}
@@ -118,7 +166,8 @@ const LobbyPage = observer(() => {
             <div className="mt-6 p-4 bg-green-50 rounded-lg">
               <h3 className="font-semibold text-green-800 mb-2">Your Account:</h3>
               <div className="text-sm text-green-700">
-                <p>Email: {user.user.email}</p>
+                {user.user.username && <p>Nickname: {user.user.username}</p>}
+                {user.user.email && <p>Email: {user.user.email}</p>}
                 <p>Balance: {user.user.balance || 0}</p>
               </div>
             </div>

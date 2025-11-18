@@ -52,14 +52,14 @@ const App = observer(() => {
     );
   }
 
-  if (user.isServerError) {
-    return (
-      <ErrorPage 
-        title="Server connection error" 
-        message={user.serverErrorMessage || "Server is not responding. Please try again later."} 
-      />
-    );
-  }
+  // if (user.isServerError) {
+  //   return (
+  //     <ErrorPage 
+  //       title="Server connection error" 
+  //       message={user.serverErrorMessage || "Server is not responding. Please try again later."} 
+  //     />
+  //   );
+  // }
 
   if (user.isTooManyRequests) {
     return (
